@@ -5,7 +5,7 @@ The [`zio-llm`][zio-llm] is a Scala 2.13/3+ library and a streaming wrapper for 
 [![Maven Central Version](https://img.shields.io/maven-central/v/io.github.otobrglez/zio-llm_3)](https://repo1.maven.org/maven2/io/github/otobrglez/zio-llm_3/)
 [![ZIO LLM](https://img.shields.io/github/stars/otobrglez/zio-llm?style=social)](https://github.com/otobrglez/zio-llm)
 
-This project is in the early stages of development, and contributions are welcome!
+This project is in the **early stages** of development, and contributions are welcome!
 
 ## Installing
 
@@ -37,7 +37,8 @@ Configuration and further tuning should be done via `OpenRouterConfig`. Either v
 calling.
 
 ```scala
-OpenRouter.completions(/* ... */)
+OpenRouter
+  .completions(/* ... */)
   .provide(
     OpenRouter.liveWithConfig(
       OpenRouterConfig(
@@ -48,7 +49,8 @@ OpenRouter.completions(/* ... */)
 
 // Or via Layers.
 
-OpenRouter.completions(/* ... */)
+OpenRouter
+  .completions(/* ... */)
   .provide(
     ZLayer.succeed(OpenRouterConfig(
       apiKey = "my-key"
