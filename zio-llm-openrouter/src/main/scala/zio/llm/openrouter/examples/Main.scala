@@ -20,7 +20,7 @@ object Main extends ZIOAppDefault {
         .runDrain
   } yield ()
 
-  def run = program.provideSome(
+  def run: RIO[ZIOAppArgs, Unit] = program.provideSome[ZIOAppArgs](
     Scope.default,
     ZLayer.fromZIO(mkConfigLayer),
     OpenRouter.live,
