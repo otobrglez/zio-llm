@@ -1,10 +1,10 @@
 # ZIO-LLM
 
-The [`zio-llm`][zio-llm] is a Scala 2.13 / 3+ library and a streaming wrapper for popular LLMs.
+The [`zio-llm`][zio-llm] is a Scala 2.13/3+ library and a streaming wrapper for popular LLMs.
 
 This project is in the early stages of development, and contributions are welcome!
 
-## Examples (OpenRouter)
+## OpenRouter
 
 ### Basic usage with "chat completions"
 
