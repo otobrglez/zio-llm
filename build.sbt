@@ -6,19 +6,24 @@ lazy val scala3Version   = "3.7.3"
 lazy val supportedScalaVersions = List(scala213Version, scala3Version)
 
 ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
+// ThisBuild / version            := "0.0.1-SNAPSHOT"
 ThisBuild / version            := "0.0.1"
+ThisBuild / licenses           := List(License.MIT)
+ThisBuild / startYear          := Some(2025)
 ThisBuild / scalaVersion       := scala213Version
 ThisBuild / crossScalaVersions := supportedScalaVersions
 ThisBuild / organization       := "io.github.otobrglez"
 ThisBuild / versionScheme      := Some("early-semver")
-
-ThisBuild / scmInfo    := Some(
+ThisBuild / homepage           := Some(url("https://github.com/otobrglez/zio-llm"))
+ThisBuild / description        := "The ZIO library and a streaming wrapper for popular LLMs."
+ThisBuild / scmInfo            := Some(
   ScmInfo(
     url("https://github.com/otobrglez/zio-llm"),
-    "scm:git@github.com:otobrglez/zio-llm.git",
+    "scm:git:https://github.com/otobrglez/zio-llm.git",
+    Some("scm:git:git@github.com:otobrglez/zio-llm.git"),
   ),
 )
-ThisBuild / developers := List(
+ThisBuild / developers         := List(
   Developer(
     id = "otobrglez",
     name = "Oto Brglez",
@@ -27,11 +32,20 @@ ThisBuild / developers := List(
   ),
 )
 
+/*
 ThisBuild / publishTo := {
   val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
   if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
   else localStaging.value
 }
+ */
+
+// ThisBuild / publishTo := sonatypePublishTo.value
+// ThisBuild / publishTo := sonatypePublishToBundle.value
+
+sonatypeCredentialHost := "central.sonatype.com"
+ThisBuild / publishTo  := sonatypePublishToBundle.value
+publishMavenStyle      := true
 
 lazy val root = (project in file("."))
   .aggregate(`zio-llm`, `zio-llm-openai`, `zio-llm-openrouter`)
@@ -62,6 +76,9 @@ lazy val `zio-llm-openai` = (project in file("zio-llm-openai"))
     libraryDependencies ++= Seq(openai),
     publishMavenStyle    := true,
     pomIncludeRepository := { _ => false },
+    // TODO: Not yet!
+    publish / skip       := true,
+    publishLocal / skip  := true,
   )
 
 lazy val `zio-llm-openrouter` = (project in file("zio-llm-openrouter"))

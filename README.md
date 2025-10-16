@@ -49,7 +49,28 @@ OpenRouter.completions(/* ... */)
 See [`zio-llm-openrouter` examples](zio-llm-openrouter/src/main/scala/zio/llm/openrouter/examples) folder for more
 use-cases.
 
-## Author
+## Development
+
+Please consider using [devenv](https://devenv.sh/) for local development.
+
+To run tests, make sure you have valid local environment variables set.
+
+```bash
+export OPENROUTER_API_KEY="<openrouter-api-key>"
+export OPENAI_API_KEY="<openai-api-key>"
+
+sbt test
+```
+
+## Releasing
+
+```sbt
+sbt +clean +test
+sbt +publishSigned
+sbt sonatypeBundleRelease
+```
+
+## Authors
 
 - [Oto Brglez](https://github.com/otobrglez)
 

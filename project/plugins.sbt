@@ -5,3 +5,6 @@ addSbtPlugin("dev.zio"          % "zio-sbt-ci"        % "0.4.0-alpha.34")
 addSbtPlugin("dev.zio"          % "zio-sbt-ecosystem" % "0.4.0-alpha.34")
 addSbtPlugin("dev.zio"          % "zio-sbt-website"   % "0.4.0-alpha.34")
 addSbtPlugin("org.scalameta"    % "sbt-scalafmt"      % "2.5.5")
+
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.12.2")
+addSbtPlugin("com.github.sbt" % "sbt-pgp"      % "2.3.1")
