@@ -51,7 +51,8 @@ final class OpenRouter private (
 
   def completions(
     model: Model,
-    prompt: Prompt,
+    messages: Seq[Message] = Seq.empty,
+    prompt: Option[Prompt] = None,
     models: Option[List[Model]] = None,
     provider: Option[Provider] = None,
     reasoning: Option[Reasoning] = None,
@@ -72,9 +73,20 @@ final class OpenRouter private (
     user: Option[String] = None,
   ): ZStream[Scope, Throwable, CompletionsResponse.Chunk] = for {
     _ <- ZStream.unit
+
+    _ <- ZStream.fromZIO(
+      ZIO.fromEither(
+        Either.cond(
+          messages.nonEmpty || prompt.nonEmpty,
+          (),
+          new IllegalArgumentException("Either messages or prompt must be provided."),
+        ),
+      ),
+    )
+    
     // format: off
     requestPayload = CompletionsRequest(
-      model, prompt, models, provider, reasoning, usage, transforms, stream = true,
+      model, messages, prompt, models, provider, reasoning, usage, transforms, stream = true,
       maxTokens, temperature, seed, topP, topK, frequencyPenalty, repetitionPenalty,
       logitBias, topLogprobs, minP, topA, user,
     )
@@ -83,19 +95,22 @@ final class OpenRouter private (
 
     request = Request.post("chat/completions", Body.fromString(requestPayload.toJson))
     response <- ZStream.fromZIO(client.request(request).mapError(e => BadConnectError(e.getMessage)))
-
-    _ <- ZStream.fromZIO(
+    _        <- ZStream.fromZIO(
       ZIO.when(response.status != Status.Ok) {
         response.body
           .asString(Charsets.Utf8)
           .flatMap { errorBody => ZIO.fail(BadResponseError(response.status, Some(errorBody))) }
-          .catchAll { _ => ZIO.fail(BadResponseError(response.status, None)) }
+          .catchAll { err =>
+            ZIO.logError(s"Got response with status ${response.status} with ${err.getMessage} - ignoring") *>
+              ZIO.fail(BadResponseError(response.status, None))
+          }
       },
     )
 
     chunk <-
       response.body
         .asServerSentEvents[String]
+        // .tap(sse => zio.Console.printLine(sse.data))
         .map(CompletionsResponse.fromServerSideEvent)
         .flatMap {
           case Left(err)                               => ZStream.fail(ChunkHandlingError(err))
@@ -103,6 +118,41 @@ final class OpenRouter private (
           case Right(CompletionsResponse.StreamDone)   => ZStream.empty
         }
   } yield chunk
+
+  def completionText(
+    model: Model,
+    messages: Seq[Message] = Seq.empty,
+    prompt: Option[Prompt] = None,
+    models: Option[List[Model]] = None,
+    provider: Option[Provider] = None,
+    reasoning: Option[Reasoning] = None,
+    usage: Option[Usage] = None,
+    transforms: Option[List[String]] = None,
+    // stream: Boolean = false,
+    maxTokens: Option[Int] = None,
+    temperature: Option[Double] = None,
+    seed: Option[Int] = None,
+    topP: Option[Double] = None,
+    topK: Option[Int] = None,
+    frequencyPenalty: Option[Double] = None,
+    repetitionPenalty: Option[Double] = None,
+    logitBias: Option[Map[String, Double]] = None,
+    topLogprobs: Option[Int] = None,
+    minP: Option[Double] = None,
+    topA: Option[Int] = None,
+    user: Option[String] = None,
+  ) =
+    completions(
+      // format: off
+      model, messages,
+      prompt, models, provider, reasoning, usage, transforms, maxTokens, temperature,
+      seed, topP, topK, frequencyPenalty, repetitionPenalty, logitBias, topLogprobs,
+      minP, topA, user,
+      // format: on
+    ).runFold(new StringBuilder()) { case (sb, chunk) =>
+      sb.append(chunk.choices.map(_.delta.map(_.content)).map(_.getOrElse("")).mkString(""))
+      sb
+    }.map(_.toString)
 }
 
 object OpenRouter {
@@ -120,7 +170,8 @@ object OpenRouter {
 
   def completions(
     model: Model,
-    prompt: Prompt,
+    messages: Seq[Message] = Seq.empty,
+    prompt: Option[Prompt] = None,
     models: Option[List[Model]] = None,
     provider: Option[Provider] = None,
     reasoning: Option[Reasoning] = None,
@@ -141,6 +192,7 @@ object OpenRouter {
   ) = ZStream.serviceWithStream[OpenRouter](
     _.completions(
       model,
+      messages,
       prompt,
       models,
       provider,

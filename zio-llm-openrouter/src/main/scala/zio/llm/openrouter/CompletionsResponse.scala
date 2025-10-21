@@ -38,13 +38,19 @@ object CompletionsResponse {
 final case class Choice(
   index: Long,
   text: Option[String],
+  delta: Option[Delta],
   @fieldName("finish_reason") finishReason: Option[String],
   @fieldName("native_finish_reason") nativeFinishReason: Option[String],
   // TODO: Handle "logprobs"
   // logprobs: Option[String]
 )
 
-final case class Delta(role: String, content: String)
+final case class Delta(
+  role: String,
+  content: String,
+  // TODO: Add "reasoning"
+  // TODO: Add "reasoning_details"
+)
 final case class Usage(
   @fieldName("prompt_tokens") promptTokens: Long,
   @fieldName("completion_tokens") completionTokens: Long,

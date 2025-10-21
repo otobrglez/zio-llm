@@ -13,7 +13,7 @@ object Main extends ZIOAppDefault {
       OpenRouter
         .completions(
           model = "openai/gpt-5-chat",
-          prompt,
+          prompt = Some(prompt),
           temperature = Some(0.0),
         )
         .tap(l => Console.print(l.choices.map(_.text.get).mkString("")))

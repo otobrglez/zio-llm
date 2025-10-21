@@ -11,23 +11,7 @@ object OpenRouterSpec extends ZIOSpecDefault {
           OpenRouter
             .completions(
               model = "openai/gpt-5-chat",
-              prompt = "Who was John Lennon?",
-              usage = Some(Completions.Usage.include),
-              temperature = Some(0.0),
-              reasoning = Some(Completions.Reasoning(effort = Some(Completions.Effort.High))),
-            )
-            .tap(l => zio.Console.print(l.choices.map(_.text.get).mkString("")))
-            .runDrain
-
-      } yield assertCompletes
-    },
-    test("tools") {
-      for {
-        _ <-
-          OpenRouter
-            .completions(
-              model = "anthropic/claude-haiku-4.5",
-              prompt = "Who was John Lennon?",
+              prompt = Some("Who was John Lennon?"),
               usage = Some(Completions.Usage.include),
               temperature = Some(0.0),
               reasoning = Some(Completions.Reasoning(effort = Some(Completions.Effort.High))),
