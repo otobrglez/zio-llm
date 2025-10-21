@@ -4,10 +4,13 @@ import zio.llm.{Model, Prompt}
 import zio.llm.openrouter.Completions._
 import zio.schema.{DeriveSchema, Schema}
 import zio.schema.annotation.fieldName
+import Message._
+import zio.Chunk
 
 private[openrouter] final case class CompletionsRequest(
   model: Model,
-  prompt: Prompt,
+  messages: Seq[Message] = Seq.empty,
+  prompt: Option[Prompt] = None,
   models: Option[List[Model]] = None,
   provider: Option[Provider] = None,
   reasoning: Option[Reasoning] = None,
@@ -29,6 +32,14 @@ private[openrouter] final case class CompletionsRequest(
 )
 
 private[openrouter] object CompletionsRequest {
+  implicit val seqMessageSchema: Schema[Seq[Message]] =
+    Schema
+      .chunk[Message]
+      .transform(
+        _.toSeq,
+        seq => Chunk.fromIterable(seq),
+      )
+
   implicit val schema: Schema[CompletionsRequest] = DeriveSchema.gen[CompletionsRequest]
   implicit val completionsRequestJsonCodec: zio.json.JsonCodec[CompletionsRequest] =
     zio.schema.codec.JsonCodec.jsonCodec(schema)
