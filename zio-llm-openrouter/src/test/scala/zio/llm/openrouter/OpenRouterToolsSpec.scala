@@ -11,29 +11,20 @@ private[openrouter] object MyExampleTools {
 
   final case class GetWeatherArgs(city: String)
   object GetWeatherArgs {
-    implicit val schema: Schema[GetWeatherArgs]       = DeriveSchema.gen[GetWeatherArgs]
+    implicit val schema: Schema[GetWeatherArgs]       = DeriveSchema.gen
     implicit val jsonCodec: JsonCodec[GetWeatherArgs] = SchemaJsonCodec.jsonCodec(schema)
   }
 
   final case class GetWeatherDateArgs(city: String, date: Option[String])
   object GetWeatherDateArgs {
-    implicit val schema: Schema[GetWeatherDateArgs]       = DeriveSchema.gen[GetWeatherDateArgs]
+    implicit val schema: Schema[GetWeatherDateArgs]       = DeriveSchema.gen
     implicit val jsonCodec: JsonCodec[GetWeatherDateArgs] = SchemaJsonCodec.jsonCodec(schema)
   }
 
   final case class WeatherResponse(temperatureC: Double)
   object WeatherResponse {
-    implicit val schema: Schema[WeatherResponse]       = DeriveSchema.gen[WeatherResponse]
+    implicit val schema: Schema[WeatherResponse]       = DeriveSchema.gen
     implicit val jsonCodec: JsonCodec[WeatherResponse] = SchemaJsonCodec.jsonCodec(schema)
-  }
-  trait WeatherService   {
-    def getWeather(args: GetWeatherArgs): Task[WeatherResponse]
-  }
-  object WeatherService  {
-    def live: ULayer[WeatherService] = ZLayer.succeed(new WeatherService {
-      def getWeather(args: GetWeatherArgs): Task[WeatherResponse] =
-        ZIO.succeed(WeatherResponse(42.toDouble))
-    })
   }
 
   private val getWeather =
@@ -48,29 +39,44 @@ private[openrouter] object MyExampleTools {
         zio.Console.printLine(s"Getting weather for ${args.city} next week").as("Sunny")
       }
 
+  final case class SumNumbersArgs(a: Int, b: Int)
+  object SumNumbersArgs {
+    implicit val schema: Schema[SumNumbersArgs]       = DeriveSchema.gen
+    implicit val jsonCodec: JsonCodec[SumNumbersArgs] = SchemaJsonCodec.jsonCodec(schema)
+  }
+
+  final case class SumNumbersResponse(sum: Int)
+  object SumNumbersResponse {
+    implicit val schema: Schema[SumNumbersResponse]       = DeriveSchema.gen
+    implicit val jsonCodec: JsonCodec[SumNumbersResponse] = SchemaJsonCodec.jsonCodec(schema)
+  }
+
+  private val sumNumbers = Tool.define[SumNumbersArgs, SumNumbersResponse]("sum_numbers").handle { args =>
+    ZIO.succeed(args.a + args.b).map(SumNumbersResponse.apply)
+  }
+
   val tools = Toolkit(getWeather, getWeatherNextWeek)
 }
 
 object OpenRouterToolsSpec extends ZIOSpecDefault {
-  def spec: Spec[TestEnvironment with Scope, Throwable] = suite("OpenRouterToolsSpec")(
+  def spec = suite("OpenRouterToolsSpec")(
     test("basic usage") {
       for {
         _ <- ZIO.unit
         _ = println("--- " * 10)
 
-        tool = MyExampleTools.tools
+        exampleTools = MyExampleTools.tools
 
         //  .toOpenRouterToolsArrayJson
         // _ = println(tool.toOpenRouterToolsArrayJson.toJsonPretty)
 
-        result <- tool.run(new Tools.ToolCall("get_weather", """{"city":"Ljubljana"}"""))
+        result <- exampleTools.run(new Tools.ToolCall("get_weather", """{"city":"Ljubljana"}"""))
         _ = println(result)
 
         _ <-
           ZIO.serviceWithZIO[OpenRouter](
             _.completionText(
               model = "google/gemini-2.5-flash",
-              // model = "openai/gpt-4.1",
               messages = Seq(
                 Message.system(
                   """You are a helpful assistant named ZIOLLM. 
@@ -78,8 +84,8 @@ object OpenRouterToolsSpec extends ZIOSpecDefault {
                     |Provide short and quick answers.
                     |You can tell about weather.""".stripMargin,
                 ),
-                // Message.developer("Introduce yourself and greet user!"),
-                Message.user("Who are you? Do you know about Elton John?"),
+                Message.developer("Greet user and tell them about tools."),
+                Message.user("What is the weather like in Ljubljana?"),
               ),
               usage = Some(Completions.Usage.include),
               temperature = Some(0.0),
@@ -90,12 +96,17 @@ object OpenRouterToolsSpec extends ZIOSpecDefault {
     },
   ).provideShared(
     Scope.default,
-    ZLayer.fromZIO(mkConfigLayer),
+    mkConfigLayer,
     OpenRouter.live,
   ) @@ TestAspect.withLiveSystem @@ TestAspect.withLiveClock
 
-  private def mkConfigLayer: Task[OpenRouterConfig] = for {
-    maybeApiKey <- System.env("OPENROUTER_API_KEY")
-    apiKey      <- ZIO.getOrFail(maybeApiKey)
-  } yield OpenRouterConfig(apiKey)
+  private def mkConfigLayer: TaskLayer[OpenRouterConfig] = ZLayer.fromZIO {
+    for {
+      maybeApiKey <- System.env("OPENROUTER_API_KEY")
+      apiKey      <-
+        ZIO
+          .fromOption(maybeApiKey)
+          .orElseFail(new IllegalArgumentException("No OPENROUTER_API_KEY key provided."))
+    } yield OpenRouterConfig(apiKey)
+  }
 }

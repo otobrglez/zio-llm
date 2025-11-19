@@ -1,11 +1,12 @@
 package zio.llm.openrouter
 
-import zio.llm.{Model, Prompt}
-import zio.llm.openrouter.Completions._
-import zio.schema.{DeriveSchema, Schema}
-import zio.schema.annotation.fieldName
-import Message._
 import zio.Chunk
+import zio.json.JsonCodec
+import zio.llm.openrouter.Completions._
+import zio.llm.{Model, Prompt}
+import zio.schema.annotation.fieldName
+import zio.schema.codec.{JsonCodec => SchemaJsonCodec}
+import zio.schema.{DeriveSchema, Schema}
 
 private[openrouter] final case class CompletionsRequest(
   model: Model,
@@ -32,15 +33,8 @@ private[openrouter] final case class CompletionsRequest(
 )
 
 private[openrouter] object CompletionsRequest {
-  implicit val seqMessageSchema: Schema[Seq[Message]] =
-    Schema
-      .chunk[Message]
-      .transform(
-        _.toSeq,
-        seq => Chunk.fromIterable(seq),
-      )
+  implicit val seqMessageSchema: Schema[Seq[Message]] = Schema.chunk[Message].transform(_.toSeq, Chunk.fromIterable(_))
 
-  implicit val schema: Schema[CompletionsRequest] = DeriveSchema.gen[CompletionsRequest]
-  implicit val completionsRequestJsonCodec: zio.json.JsonCodec[CompletionsRequest] =
-    zio.schema.codec.JsonCodec.jsonCodec(schema)
+  private implicit val schema: Schema[CompletionsRequest]                 = DeriveSchema.gen
+  implicit val completionsRequestJsonCodec: JsonCodec[CompletionsRequest] = SchemaJsonCodec.jsonCodec(schema)
 }

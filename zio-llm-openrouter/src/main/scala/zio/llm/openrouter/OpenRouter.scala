@@ -2,12 +2,14 @@ package zio.llm.openrouter
 
 import zio.json._
 import zio.http._
+import zio.json.internal.Write
 import zio.llm.openrouter.Completions.{Provider, Reasoning, Usage}
 import zio.llm.{Model, Prompt}
 import zio.schema.{DeriveSchema, Schema}
 import zio.stream.ZStream
 import zio.{Console, RIO, RLayer, Scope, TaskLayer, ZIO, ZLayer}
 import zio.schema.annotation.caseName
+import zio.schema.codec.{JsonCodec => SchemaJsonCodec}
 
 sealed trait Error                                                              extends Throwable {
   def message: String
@@ -92,6 +94,8 @@ final class OpenRouter private (
     )
     // format: on
     _ <- ZStream.logDebug(s"Requesting with ${requestPayload.toJsonPretty}")
+    _ = println(requestPayload.toJsonPretty)
+    _ <- ZStream.fail(new RuntimeException("Not implemented"))
 
     request = Request.post("chat/completions", Body.fromString(requestPayload.toJson))
     response <- ZStream.fromZIO(client.request(request).mapError(e => BadConnectError(e.getMessage)))
@@ -144,8 +148,8 @@ final class OpenRouter private (
   ) =
     completions(
       // format: off
-      model, messages,
-      prompt, models, provider, reasoning, usage, transforms, maxTokens, temperature,
+      model, messages, prompt, models, provider,
+      reasoning, usage, transforms, maxTokens, temperature,
       seed, topP, topK, frequencyPenalty, repetitionPenalty, logitBias, topLogprobs,
       minP, topA, user,
       // format: on
