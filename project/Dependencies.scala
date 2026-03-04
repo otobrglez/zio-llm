@@ -1,13 +1,13 @@
 import sbt.*
 
 object Dependencies {
-  val ZioVersion       = "2.1.21"
+  val ZioVersion       = "2.1.22"
   val ZioSchemaVersion = "1.7.5"
   val ZioHttpVersion   = "3.5.1"
-  val OpenAIVersion    = "4.3.0"
+  val OpenAIVersion    = "4.7.1"
 
-  val scalafmt         = "org.scalameta" %% "scalafmt-dynamic" % "3.10.0"
-  val scalametaParsers = "org.scalameta" %% "parsers"          % "4.14.0"
+  val scalafmt         = "org.scalameta" %% "scalafmt-dynamic" % "3.10.1"
+  val scalametaParsers = "org.scalameta" %% "parsers"          % "4.14.1"
 
   val zio                = "dev.zio" %% "zio"              % ZioVersion
   val `zio-streams`      = "dev.zio" %% "zio-streams"      % ZioVersion
